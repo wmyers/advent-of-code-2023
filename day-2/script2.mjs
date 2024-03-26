@@ -24,7 +24,7 @@ const generateMap = (fileArray) => {
     );
 }
 
-const validateMappedGames = (gameInputMap) => {
+const sumPlayableGames = (gameInputMap) => {
     let result = 0;
     gameInputMap.forEach((v, k) => {
         if (v.get('red') <= 12 && v.get('green') <= 13 && v.get('blue') <= 14) {
@@ -34,5 +34,13 @@ const validateMappedGames = (gameInputMap) => {
     return result;
 }
 
-console.log(validateMappedGames(generateMap(fileInputArray)));
+const sumPowerMinimumSets = (gameInputMap) => {
+  return Array.from(gameInputMap.values()).reduce((curr, valMap) => {
+      const power =  valMap.get('red') * valMap.get('green') * valMap.get('blue');
+      return curr + power;
+  }, 0);
+}
+
+// console.log(sumPlayableGames(generateMap(fileInputArray)));
+console.log(sumPowerMinimumSets(generateMap(fileInputArray)));
 // console.log(generateMap(fileInputArray));
