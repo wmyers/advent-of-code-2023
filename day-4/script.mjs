@@ -12,8 +12,10 @@ const parseFile = filename => {
 const checkEntries = fileInputArray => {
   let total = 0;
 
+  // Iterate through each Card
   fileInputArray.map(line => {
-    const [winningNumbersString, entryNumbersString] = line.split(': ')[1].split('|');    // Remove card number and split winning numbers and entries
+    // Remove card number and split winning numbers and entries
+    const [winningNumbersString, entryNumbersString] = line.split(': ')[1].split('|');    
     const winningNumbers = winningNumbersString.match(/\d+/g);      // Convert to an array of winning numbers
     const entryNumbers = entryNumbersString.match(/\d+/g);          // Convert to an array of entry numbers
   
