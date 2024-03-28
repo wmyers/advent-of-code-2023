@@ -11,5 +11,8 @@
   "license": "ISC",
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "core-js": "^3.36.1"
   }
 }
