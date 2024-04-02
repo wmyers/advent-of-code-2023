@@ -1,76 +1,91 @@
 // Advent of Code - Day 03 - RB
 import { readFileSync } from "node:fs";
+import SimpleGrid from "./simple-grid.js";
 
-// Read the file
-const parseFile = filename => {
-    const fileInput = readFileSync(filename).toString();
-    const fileInputArray = fileInput.split('\n').filter(line => line.length > 0);
-    return fileInputArray;
-}
+// Helper functions
+const isSymbol = value => value !== '.' && (value < '0' || value > '9');
+const isDigit = value => value >= '0' && value <= '9';
 
-// Process the input text to check for gear parts
-const checkInputGearParts = textInput => {
-    let total = 0;
+/**
+ * Solve both parts of the puzzle
+ * 
+ * @param {SimpleGrid} puzzleGrid 
+ * @returns {number} - the results
+ */
+const solvePuzzles = (puzzleGrid) => {
+    const partNumberCoords = new Set();
+    const gearPartCoords = [];
 
-    textInput.forEach((line, lineNumber) => {
-        let workingLine = line;
-        let currentNumberStartingPosition = 0;
-        // Extract numbers from line
-        let number = workingLine.match(/\d+/) ? workingLine.match(/\d+/)[0] : null;
-        
-        // If there are numbers in the current line then find
-        // starting position and length of it
-        while (number) {
-            currentNumberStartingPosition += workingLine.indexOf(number);
-            const numberLength = number.length;
+    // Find and loop through all the symbols in the puzzle grid
+    puzzleGrid.findAll(isSymbol).forEach(({ r, c }) => {
+        // Create a new set to hold the unique part numbers next to each symbol
+        const partNumberCoordsForThisSymbol = new Set();
 
-            workingLine = workingLine.substring(workingLine.indexOf(number) + number.length);
-            const gearCheck = checkGearPart(textInput, lineNumber, currentNumberStartingPosition, numberLength);
-            currentNumberStartingPosition += numberLength;
+        // Check surrounding cells for digits to confirm that it is a valid symbol
+        puzzleGrid.forEachNear(r, c, (value, r, c) => {
+            if (isDigit(value)) {
+                // Logic to retrieve the full number 
+                while (c > 0 && isDigit(puzzleGrid.get(r, c - 1))) {
+                    c--;
+                }
 
-            if (gearCheck) total += parseInt(number);
+                // Store the part number coordinates in the set
+                partNumberCoordsForThisSymbol.add(`${r},${c}`);
+            }
+        });
 
-            number = workingLine.match(/\d+/) ? workingLine.match(/\d+/)[0] : null;
+        // If exactly two part numbers next to symbol it is a valid gear and add to the 
+        // gear parts array
+        if (partNumberCoordsForThisSymbol.size === 2) {
+            gearPartCoords.push([ ...partNumberCoordsForThisSymbol ]);
         }
+
+        // Add the part number coords to the master set
+        partNumberCoordsForThisSymbol.forEach(coords => partNumberCoords.add(coords));
     });
 
-    return total;
+    // Extract the valid part numbers into a new array
+    const partNumbers = [ ...partNumberCoords ].map((coords) => coordsToPartNumber(puzzleGrid, coords));
+
+    // Using the locations of the gear part numbers, extract and multiply them to 
+    // compute the gear ratios.
+    const gearRatios = gearPartCoords.map(([ coords1, coords2 ]) => {
+        return coordsToPartNumber(puzzleGrid, coords1) * coordsToPartNumber(puzzleGrid, coords2);
+    });
+
+    // Puzzle 01 - Return the sum of the part numbers
+    // Puzzle 02 - Return the sum of the gear ratios
+    return [partNumbers.reduce((a, b) => a + b), gearRatios.reduce((a, b) => a + b)];
 }
 
-const checkGearPart = (textInput, lineNumber, startPosition, numberLength) => {
-    const numberRows = textInput.length;
-    const numberColumns = textInput[0].length;
-    const endBoundsCheckRow = numberRows - 1;
-    const endBoundsCheckColumn = numberColumns - 1;
-    
-    let linesToCheck = [];
-    let gearPart = false;
+// Obtain the part number at the coordinates given
+const coordsToPartNumber = (puzzleGrid, coords) => {
+    let [ r, c ] = coords.split(',').map(Number);
+    let value = 0;
+    let cell = puzzleGrid.get(r,c);
 
-    // Retrieve previous line string to check
-    if (lineNumber > 0) {
-        linesToCheck.push(textInput[Math.max(lineNumber - 1, 0)].substring(Math.max(0, startPosition - 1), Math.min(startPosition + numberLength + 1, endBoundsCheckColumn + 1)));
-    }
+    do {
+      value = value * 10 + Number(cell);
 
-    // Retrieve next line string to check
-    if (lineNumber < endBoundsCheckRow) {
-        linesToCheck.push(textInput[Math.max(lineNumber + 1, 0)].substring(Math.max(0, startPosition - 1), Math.min(startPosition + numberLength + 1, endBoundsCheckColumn + 1)));
-    }
+      c++;
+      if (r < 0 || r > puzzleGrid.rows || c < 0 || c > puzzleGrid.cols) {
+        break;
+      }
 
-    // Retrieve characters on current line
-    linesToCheck.push(textInput[lineNumber].substring(Math.max(0, startPosition - 1), Math.min(startPosition + numberLength + 1, endBoundsCheckColumn + 1)));
+      cell = puzzleGrid.get(r,c);
+    } while (isDigit(cell));
 
-    // Check if there is a special character any of the lines to check
-    linesToCheck.map(line => { if (/[^\d.]/.test(line)) { gearPart = true } });
-
-    return gearPart;
-};
-
+    return value;    
+}
 
 // MAIN
 const main = () => {
-    const textInput = parseFile(process.argv[2]);
-    const result = checkInputGearParts(textInput);
-    console.log(`Result: ${result}`);
+    const filename = process.argv[2];
+    const puzzleGrid = new SimpleGrid({ data: readFileSync(filename).toString() });
+
+    const puzzleResults = solvePuzzles(puzzleGrid);
+    console.log(`Puzzle One Result: ${puzzleResults[0]}`);
+    console.log(`Puzzle Two Result: ${puzzleResults[1]}`);
 }
 
 main();
