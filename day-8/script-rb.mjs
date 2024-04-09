@@ -31,37 +31,72 @@ const findSolution = (instxString, nodeMap) => {
     return stepCount;
 }
 
-const processNodeQueue = (instx, nodeQueue, nodeMap) => {
-    let nextNodeQueue = [];
+const gcd = (a, b) => b == 0 ? a : gcd (b, a % b);
+const lcm = (a, b) =>  a / gcd (a, b) * b;
+const lcmAll = (ns) => ns .reduce (lcm, 1);
+
+const processNextInstx = (ghostTracker, nodeMap) => {
     let allNodesEnd = true;
+    let nextNodes = '';
 
-    nodeQueue.map(node => {
-        let nextNode = instx === 'L' ? nodeMap.get(node)[0] : nodeMap.get(node)[1];
-        nextNodeQueue.push(nextNode);
-
-        if (!nextNode.endsWith('Z')) {
-            allNodesEnd = false;
-        } else {
-            console.log(`One path ended: ${nextNode}`);
+    ghostTracker.map(ghost => {
+        if (!ghost.foundExit) {
+            ghost.currentNode = ghost.instx[0] === 'L' ? nodeMap.get(ghost.currentNode)[0] : nodeMap.get(ghost.currentNode)[1];
+            ghost.pathTravelled = ghost.pathTravelled.concat(ghost.instx[0]);
+            ghost.instx = ghost.instx.slice(1)
+            ghost.solutionSteps++;
+    
+            if (ghost.currentNode.endsWith('Z')) {
+                ghost.foundExit = true;
+                ghost.instx = ghost.pathTravelled;
+                ghost.pathTravelled = '';
+            } else {
+                allNodesEnd = false;
+    
+                if (ghost.instx.length === 0) {
+                    ghost.instx = ghost.pathTravelled;
+                    ghost.pathTravelled = '';
+                }    
+            }    
         }
+
+        nextNodes = `${nextNodes} ${ghost.currentNode} `;
     }); 
 
-    return allNodesEnd ? [] : nextNodeQueue;
+    console.log(nextNodes);
+    return ghostTracker.filter(ghost => ghost.foundExit !== true).length > 0 ? false : true;
+}
+
+const calcLowestFactor = ghostTracker => {
+    const ghostSteps = ghostTracker.map(ghost => ghost.solutionSteps);
+    const lowestMultiple = lcmAll(ghostSteps);
+    return lowestMultiple;
 }
 
 const findGhostSolution = (instxString, nodeMap) => {
-    const instxStringOriginal = instxString;
+    let solutionFound = false;
     let stepCount = 0;
     let nodeQueue = Array.from(nodeMap.keys()).filter(node => node.endsWith('A'));
+    let ghostTracker = [];
+    let result = 0;
+    
+    nodeQueue.forEach((node, index) => {
+        ghostTracker.push({
+            currentNode: node,
+            instx: instxString,
+            pathTravelled: '',
+            foundExit: false,
+            solutionSteps: 0,
+        });
+    });
 
-    while (nodeQueue.length > 0) {
-        console.log(`Step ${stepCount}: NodeQueue: ${nodeQueue}`);
-        nodeQueue = processNodeQueue(instxString[0], nodeQueue, nodeMap);
-        instxString = instxString.length > 1 ? instxString.slice(1) : instxStringOriginal;
+    while (!solutionFound) {        
+        solutionFound = processNextInstx(ghostTracker, nodeMap);
         stepCount++;
     }
 
-    return stepCount;
+    result = calcLowestFactor(ghostTracker);
+    return result;
 }
 
 const main = () => {
