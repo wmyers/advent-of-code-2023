@@ -40,7 +40,7 @@ class SimpleGrid {
 
     // Check if a given cell is in bounds in this grid
     inBounds(r, c) {
-        return r >= 0 & r <= this.#rows - 1 && c >= 0 && c <= this.#cols;
+        return r >= 0 & r <= this.#rows - 1 && c >= 0 && c <= this.#cols - 1;
     }
 
     // Return the value stored at a specific set of coordinates
@@ -60,6 +60,16 @@ class SimpleGrid {
         }
 
         return r * this.#cols + c;
+    }
+
+    /** Locates the first instance of the given value in the grid (rows first, then columns) 
+     * 
+     * @param {*} value - the value to find
+     * @returns {Object|null} - an object with `r` and `c` properties, if found; `null` otherwise
+     */
+    coordsOf(value) {
+        const index = this.#grid.indexOf(value);
+        return index === -1 ? null : { r: Math.floor(index / this.#rows), c: index % this.#rows };
     }
 
     /**
