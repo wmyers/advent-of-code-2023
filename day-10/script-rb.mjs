@@ -2,8 +2,6 @@
 import SimpleGrid from "./simple-grid.js";
 import { readFileSync } from 'node:fs';
 
-const isStartPosition = value => value === 'S';
-
 // Direction movement 
 const DIRECTIONS = {
     NORTH: [-1, 0],
@@ -42,6 +40,7 @@ const validPipeTransitions = {
     'S': [VALID_ENTRY.NORTH, VALID_ENTRY.EAST, VALID_ENTRY.SOUTH, VALID_ENTRY.WEST, ['S']],
 }
 
+// Check if this move is a valid move considering the current pipe type and the proposed next one
 const isValidPosition = (currentVal, nextVal) => {
     const validMappings = validPipeTransitions[currentVal];
     let validPosition = false;
@@ -55,6 +54,7 @@ const isValidPosition = (currentVal, nextVal) => {
     return validPosition;
 }
 
+// Function to find the next valid move
 const findValidNextPosition = (puzzleGrid, previousRow, previousCol, thisRow, thisCol) => {
     const currentVal = puzzleGrid.get(thisRow, thisCol);
     let allDirections = [];
@@ -62,24 +62,25 @@ const findValidNextPosition = (puzzleGrid, previousRow, previousCol, thisRow, th
     let foundValidNextPosition = false;
     let nextValidPosition = {};
 
-    if (currentVal === 'S') {
-        allDirections = [DIRECTIONS.NORTH, DIRECTIONS.EAST, DIRECTIONS.SOUTH, DIRECTIONS.WEST];
-    } else {
-        allDirections = validPipeConnections[currentVal];
-    }
+    // Retrieve the valid directions from the current pipe type
+    allDirections = validPipeConnections[currentVal];
 
+    // Remove those which would put us out of bounds
     allDirections.map(direction => {
         if (puzzleGrid.inBounds(thisRow + direction[0], thisCol + direction[1])) {
             allValidDirections.push(direction);
         }
     })
 
+    // Until we find a valid next position
     while (!foundValidNextPosition) {
+        // Check each direction and see if it is a valid move
         for (let i = 0; i < allValidDirections.length; i++) {
             let newRow = thisRow + allValidDirections[i][0];
             let newCol = thisCol + allValidDirections[i][1];
             let nextVal = puzzleGrid.get(newRow, newCol);
     
+            // If we haven't moved back to the previous position and the next move is valid
             if (!(previousRow === newRow && previousCol === newCol) && isValidPosition(currentVal, nextVal)) {
                 nextValidPosition = {
                     nextVal, 
@@ -96,7 +97,9 @@ const findValidNextPosition = (puzzleGrid, previousRow, previousCol, thisRow, th
     return nextValidPosition;
 }
 
+// Main function to solve the puzzle
 const solvePuzzles = puzzleGrid => {
+    // Get the starting position coords
     const startingCell = puzzleGrid.coordsOf('S');
     let currentRow = startingCell.r;
     let currentCol = startingCell.c;
@@ -105,8 +108,11 @@ const solvePuzzles = puzzleGrid => {
     let previousRow = -1;
     let previousCol = -1; 
 
+    // Loop until we get back to the 'S' position
     while (inProgress) {
+        // Retrieve the next valid position
         const nextPositionDetails = findValidNextPosition(puzzleGrid, previousRow, previousCol, currentRow, currentCol);
+        // If we haven't ended then set variables for next loop around
         if (nextPositionDetails.nextVal !== 'S') {
             stepCount++;
             previousRow = currentRow;
@@ -119,6 +125,7 @@ const solvePuzzles = puzzleGrid => {
     
     }
 
+    // The furthest distance from the start is half the total distance from from the start back to itself
     return [stepCount / 2, 0];
 }
 
